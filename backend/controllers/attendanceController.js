@@ -37,6 +37,34 @@ console.log("Attendance Saved:", attendance);
     }
 };
 
+const getTimetableSubjects = async (req, res) => {
+    try {
+        const { semesterId, branch, section, attendanceDate } = req.query;
+
+        // Create a date object and normalize to start of the day UTC
+        const targetDate = new Date(attendanceDate);
+        targetDate.setUTCHours(0, 0, 0, 0);
+
+        const timetable = await Timetable.findOne({
+            semesterId,
+            branch,
+            section,
+            // Compare as date values to avoid timezone shifts
+            effectiveFrom: { $lte: targetDate },
+            effectiveTo: { $gte: targetDate }
+        });
+
+        if (!timetable) {
+            console.log("No timetable found for:", targetDate);
+            return res.status(200).json({ success: true, data: [] });
+        }
+
+        res.status(200).json({ success: true, data: timetable.subjects || [] });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 // 2. Get Attendance History (The Main View)
 const getAttendance = async (req, res) => {
     try {

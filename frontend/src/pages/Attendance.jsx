@@ -51,19 +51,25 @@ export default function Attendance() {
 
     // 3. Fetch Subjects
     useEffect(() => {
-        const fetchSubjects = async () => {
-            if (form.semesterId && form.branch && form.section && form.attendanceDate) {
-                try {
-                    const res = await api.get(`/timetables/subjects`, { params: form });
-                    setSubjects(res.data.data || []);
-                } catch (err) {
-                    setSubjects([]);
-                    console.error("Subjects error", err);
-                }
-            } else {
-                setSubjects([]);
-            }
-        };
+        // Inside useEffect [fetchSubjects]
+const fetchSubjects = async () => {
+    if (form.semesterId && form.branch && form.section && form.attendanceDate) {
+        try {
+            // Keep the date as a clean YYYY-MM-DD string
+            const res = await api.get(`/timetables/subjects`, { 
+                params: { 
+                    semesterId: form.semesterId,
+                    branch: form.branch,
+                    section: form.section,
+                    attendanceDate: form.attendanceDate // Send as YYYY-MM-DD string
+                } 
+            });
+            setSubjects(res.data.data || []);
+        } catch (err) {
+            setSubjects([]);
+        }
+    }
+};
         fetchSubjects();
     }, [form.semesterId, form.branch, form.section, form.attendanceDate]);
 
