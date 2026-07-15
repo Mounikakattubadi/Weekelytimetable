@@ -7,7 +7,10 @@ export default function Timetable() {
 
   const [form, setForm] = useState({
     semesterId: "",
+    branch: "",
+    section: "",
     effectiveFrom: "",
+    effectiveTo: "",
     schedule: [
       {
         day: "Monday",
@@ -48,128 +51,141 @@ export default function Timetable() {
   const handleSave = async () => {
     try {
       await api.post("/timetables", form);
-
       alert("Timetable Saved Successfully");
-
+      
+      // Reset form
       setForm({
         semesterId: "",
+        branch: "",
+        section: "",
         effectiveFrom: "",
+        effectiveTo: "",
         schedule: [
           {
             day: "Monday",
-            periods: [
-              {
-                period: 1,
-                subject: "",
-                faculty: "",
-              },
-            ],
+            periods: [{ period: 1, subject: "", faculty: "" }],
           },
         ],
       });
-
       fetchTimetables();
     } catch (err) {
       console.log(err);
-      alert("Error Saving Timetable");
+      alert("Error Saving Timetable: " + (err.response?.data?.message || err.message));
     }
   };
 
   return (
     <div className="container mt-4">
-
       <h2>Create Timetable</h2>
 
-      <select
-        className="form-control mb-3"
-        value={form.semesterId}
-        onChange={(e) =>
-          setForm({
-            ...form,
-            semesterId: e.target.value,
-          })
-        }
-      >
-        <option value="">Select Semester</option>
+      <div className="row mb-3">
+        <div className="col-md-4">
+          <select
+            className="form-control"
+            value={form.semesterId}
+            onChange={(e) => setForm({ ...form, semesterId: e.target.value })}
+          >
+            <option value="">Select Semester</option>
+            {semesters.map((s) => (
+              <option key={s._id} value={s._id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="col-md-4">
+          <input
+            className="form-control"
+            placeholder="Branch (e.g., CSE)"
+            value={form.branch}
+            onChange={(e) => setForm({ ...form, branch: e.target.value })}
+          />
+        </div>
+        <div className="col-md-4">
+          <input
+            className="form-control"
+            placeholder="Section (e.g., A)"
+            value={form.section}
+            onChange={(e) => setForm({ ...form, section: e.target.value })}
+          />
+        </div>
+      </div>
 
-        {semesters.map((semester) => (
-          <option key={semester._id} value={semester._id}>
-            {semester.name}
-          </option>
-        ))}
-      </select>
+      <div className="row mb-3">
+        <div className="col-md-6">
+          <label>Effective From</label>
+          <input
+            type="date"
+            className="form-control"
+            value={form.effectiveFrom}
+            onChange={(e) => setForm({ ...form, effectiveFrom: e.target.value })}
+          />
+        </div>
+        <div className="col-md-6">
+          <label>Effective To</label>
+          <input
+            type="date"
+            className="form-control"
+            value={form.effectiveTo}
+            onChange={(e) => setForm({ ...form, effectiveTo: e.target.value })}
+          />
+        </div>
+      </div>
 
-      <input
-        type="date"
-        className="form-control mb-3"
-        value={form.effectiveFrom}
-        onChange={(e) =>
-          setForm({
-            ...form,
-            effectiveFrom: e.target.value,
-          })
-        }
-      />
+      <div className="mb-3">
+        <input
+          className="form-control mb-2"
+          placeholder="Subject"
+          value={form.schedule[0].periods[0].subject}
+          onChange={(e) => {
+            const updated = { ...form };
+            updated.schedule[0].periods[0].subject = e.target.value;
+            setForm(updated);
+          }}
+        />
+        <input
+          className="form-control"
+          placeholder="Faculty"
+          value={form.schedule[0].periods[0].faculty}
+          onChange={(e) => {
+            const updated = { ...form };
+            updated.schedule[0].periods[0].faculty = e.target.value;
+            setForm(updated);
+          }}
+        />
+      </div>
 
-      <input
-        className="form-control mb-2"
-        placeholder="Subject"
-        value={form.schedule[0].periods[0].subject}
-        onChange={(e) => {
-          const updated = { ...form };
-          updated.schedule[0].periods[0].subject = e.target.value;
-          setForm(updated);
-        }}
-      />
-
-      <input
-        className="form-control mb-3"
-        placeholder="Faculty"
-        value={form.schedule[0].periods[0].faculty}
-        onChange={(e) => {
-          const updated = { ...form };
-          updated.schedule[0].periods[0].faculty = e.target.value;
-          setForm(updated);
-        }}
-      />
-
-      <button
-        className="btn btn-success"
-        onClick={handleSave}
-      >
+      <button className="btn btn-success" onClick={handleSave}>
         Save Timetable
       </button>
 
       <hr />
 
       <h3>Saved Timetables</h3>
-
       <table className="table table-bordered">
-
         <thead>
           <tr>
             <th>Semester</th>
-            <th>Effective From</th>
+            <th>Branch</th>
+            <th>Sec</th>
+            <th>From</th>
+            <th>To</th>
             <th>Subject</th>
-            <th>Faculty</th>
           </tr>
         </thead>
-
         <tbody>
-
           {timetables.map((tt) => (
             <tr key={tt._id}>
               <td>{tt.semesterId?.name}</td>
-              <td>{tt.effectiveFrom.substring(0, 10)}</td>
-              <td>{tt.schedule[0].periods[0].subject}</td>
-              <td>{tt.schedule[0].periods[0].faculty}</td>
+              <td>{tt.branch}</td>
+              <td>{tt.section}</td>
+              <td>{tt.effectiveFrom?.substring(0, 10)}</td>
+              <td>{tt.effectiveTo?.substring(0, 10)}</td>
+              <td>{tt.schedule[0]?.periods[0]?.subject}</td>
             </tr>
           ))}
-
         </tbody>
-
       </table>
-
     </div>
   );
 }
