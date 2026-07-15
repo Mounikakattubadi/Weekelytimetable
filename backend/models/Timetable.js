@@ -7,25 +7,21 @@ const timetableSchema = new mongoose.Schema(
             ref: "Semester",
             required: true,
         },
-        // Added for specific grouping
         branch: {
             type: String,
             required: true,
             trim: true,
         },
-        // Added for specific grouping
         section: {
             type: String,
             required: true,
             uppercase: true,
             trim: true,
         },
-        // Renamed to clarify range
         effectiveFrom: {
             type: Date,
             required: true,
         },
-        // Added to define a specific weekly period
         effectiveTo: {
             type: Date,
             required: true,
@@ -36,12 +32,13 @@ const timetableSchema = new mongoose.Schema(
                     type: String,
                     required: true,
                 },
-                // Add these fields to the 'periods' object inside the schema
                 periods: [
                     {
                         period: { type: Number, required: true },
-                        startTime: { type: String, required: true }, // e.g., "09:00"
-                        endTime: { type: String, required: true },   // e.g., "10:00"
+                        // Added date field here
+                        date: { type: Date, required: true }, 
+                        startTime: { type: String, required: true }, 
+                        endTime: { type: String, required: true }, 
                         subject: { type: String, required: true },
                         faculty: { type: String, required: true },
                         roomNumber: { type: String, default: "TBA" },
@@ -55,7 +52,7 @@ const timetableSchema = new mongoose.Schema(
     }
 );
 
-// Indexing for faster queries when filtering by class
+// Updated index to include the date field if you plan to search by it
 timetableSchema.index({ semesterId: 1, branch: 1, section: 1, effectiveFrom: 1 });
 
 module.exports = mongoose.model("Timetable", timetableSchema);

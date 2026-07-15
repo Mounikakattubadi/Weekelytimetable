@@ -6,10 +6,14 @@ const createTimetable = async (req, res) => {
 
         const normalizedBranch = branch.toUpperCase();
         const normalizedSection = section.toUpperCase();
-        const newStartTime = schedule[0].periods[0].startTime;
-        const newEndTime = schedule[0].periods[0].endTime;
+        
+        // Extract the new period's details
+        const newPeriod = schedule[0].periods[0];
+        const newStartTime = newPeriod.startTime;
+        const newEndTime = newPeriod.endTime;
+        const newDate = new Date(newPeriod.date).setHours(0,0,0,0);
 
-        // Check for existing timetables in the same date range
+        // Find existing timetables that overlap the date range AND the specific date
         const overlapping = await Timetable.find({
             semesterId,
             branch: normalizedBranch,
@@ -18,30 +22,31 @@ const createTimetable = async (req, res) => {
             effectiveTo: { $gte: effectiveFrom }
         });
 
-        // Check if any of the overlapping records have a time conflict
-        const hasTimeConflict = overlapping.some(tt => {
+        // Check if any existing record has a conflict ON THE SAME DATE AND TIME
+        const hasConflict = overlapping.some(tt => {
             return tt.schedule.some(day => {
                 return day.periods.some(p => {
-                    // Conflict if: (NewStart < ExistingEnd) AND (NewEnd > ExistingStart)
-                    return newStartTime < p.endTime && newEndTime > p.startTime;
+                    const existingDate = new Date(p.date).setHours(0,0,0,0);
+                    // Conflict if: Same Date AND Times Overlap
+                    const isSameDay = existingDate === newDate;
+                    const timesOverlap = newStartTime < p.endTime && newEndTime > p.startTime;
+                    return isSameDay && timesOverlap;
                 });
             });
         });
 
-        if (hasTimeConflict) {
+        if (hasConflict) {
             return res.status(400).json({
                 success: false,
-                message: "A class for this branch/section already exists for this date and time range.",
+                message: "A class for this branch/section already exists for this specific date and time.",
             });
         }
 
-        const timetableData = {
+        const timetable = await Timetable.create({
             ...req.body,
             branch: normalizedBranch,
             section: normalizedSection
-        };
-
-        const timetable = await Timetable.create(timetableData);
+        });
 
         res.status(201).json({ success: true, data: timetable });
     } catch (error) {
@@ -79,33 +84,30 @@ const getSubjectsByClass = async (req, res) => {
     try {
         const { semesterId, branch, section, attendanceDate } = req.query;
         
-        console.log("Backend Received Query:", { semesterId, branch, section, attendanceDate });
-
-        const date = new Date(attendanceDate);
+        const targetDate = new Date(attendanceDate).setHours(0,0,0,0);
         
+        // Find timetable for this class
         const timetable = await Timetable.findOne({
             semesterId,
             branch: branch.toUpperCase(),
             section: section.toUpperCase(),
-            effectiveFrom: { $lte: date },
-            effectiveTo: { $gte: date }
+            effectiveFrom: { $lte: new Date(attendanceDate) },
+            effectiveTo: { $gte: new Date(attendanceDate) }
         });
 
-        console.log("Found Timetable:", timetable ? "Yes" : "No");
-
         let subjects = [];
-        if (timetable && timetable.schedule) {
+        if (timetable) {
+            // Filter periods that match the specific attendanceDate
             const allSubjects = timetable.schedule.flatMap(day => 
-                day.periods.map(p => p.subject)
+                day.periods
+                    .filter(p => new Date(p.date).setHours(0,0,0,0) === targetDate)
+                    .map(p => p.subject)
             );
             subjects = [...new Set(allSubjects)];
         }
         
-        console.log("Subjects found:", subjects);
-
         res.status(200).json({ success: true, data: subjects });
     } catch (error) {
-        console.error("Error:", error);
         res.status(500).json({ success: false, message: error.message });
     }
 };
