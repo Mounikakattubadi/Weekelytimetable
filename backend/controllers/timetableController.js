@@ -1,28 +1,37 @@
 const Timetable = require("../models/Timetable");
 
-// 1. Create Timetable with Overlap Validation
 const createTimetable = async (req, res) => {
     try {
-        const { semesterId, branch, section, effectiveFrom, effectiveTo } = req.body;
+        const { semesterId, branch, section, effectiveFrom, effectiveTo, schedule } = req.body;
 
-        // Normalize inputs
         const normalizedBranch = branch.toUpperCase();
         const normalizedSection = section.toUpperCase();
+        const newStartTime = schedule[0].periods[0].startTime;
+        const newEndTime = schedule[0].periods[0].endTime;
 
-        // Check for existing overlapping timetable
-        const overlapping = await Timetable.findOne({
+        // Check for existing timetables in the same date range
+        const overlapping = await Timetable.find({
             semesterId,
             branch: normalizedBranch,
             section: normalizedSection,
-            $or: [
-                { effectiveFrom: { $lte: effectiveTo }, effectiveTo: { $gte: effectiveFrom } }
-            ]
+            effectiveFrom: { $lte: effectiveTo },
+            effectiveTo: { $gte: effectiveFrom }
         });
 
-        if (overlapping) {
+        // Check if any of the overlapping records have a time conflict
+        const hasTimeConflict = overlapping.some(tt => {
+            return tt.schedule.some(day => {
+                return day.periods.some(p => {
+                    // Conflict if: (NewStart < ExistingEnd) AND (NewEnd > ExistingStart)
+                    return newStartTime < p.endTime && newEndTime > p.startTime;
+                });
+            });
+        });
+
+        if (hasTimeConflict) {
             return res.status(400).json({
                 success: false,
-                message: "A timetable for this class already exists for this date range.",
+                message: "A class for this branch/section already exists for this date and time range.",
             });
         }
 
@@ -34,15 +43,9 @@ const createTimetable = async (req, res) => {
 
         const timetable = await Timetable.create(timetableData);
 
-        res.status(201).json({
-            success: true,
-            data: timetable,
-        });
+        res.status(201).json({ success: true, data: timetable });
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: error.message,
-        });
+        res.status(500).json({ success: false, message: error.message });
     }
 };
 

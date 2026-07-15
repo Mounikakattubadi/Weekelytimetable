@@ -1,0 +1,42 @@
+/* CreateTimetable.module.css */
+.container {
+  max-width: 900px;
+  background: #ffffff;
+  padding: 2.5rem;
+  border-radius: 15px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  margin-top: 2rem;
+}
+
+.header {
+  color: #2c3e50;
+  margin-bottom: 2rem;
+  font-weight: 700;
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 1rem;
+}
+
+.inputGroup {
+  margin-bottom: 1.5rem;
+}
+
+.label {
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.saveButton {
+  padding: 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  background-color: #198754;
+  border: none;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.saveButton:hover {
+  background-color: #157347;
+  transform: scale(1.01);
+}

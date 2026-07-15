@@ -1,0 +1,60 @@
+/* Attendance.module.css */
+.container {
+  max-width: 1000px;
+  background-color: #ffffff;
+  padding: 2.5rem;
+  border-radius: 15px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05);
+  margin-top: 2rem;
+}
+
+.header {
+  color: #2c3e50;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid #f1f3f5;
+  padding-bottom: 0.75rem;
+}
+
+.subHeader {
+  color: #34495e;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.formSection {
+  margin-bottom: 2rem;
+}
+
+.submitBtn {
+  padding: 0.75rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.submitBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(13, 110, 253, 0.3);
+}
+
+.filterCard {
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.02);
+}
+
+.tableContainer {
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  border: 1px solid #dee2e6;
+}
+
+.tableHeader {
+  background-color: #343a40;
+  color: white;
+}

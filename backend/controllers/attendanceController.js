@@ -1,20 +1,12 @@
 const Attendance = require("../models/Attendance");
 const Timetable = require("../models/Timetable");
+const Semester = require("../models/Semester");
 
-// Create Attendance (with dynamic timetable mapping)
+// 1. Mark Attendance
 const markAttendance = async (req, res) => {
     try {
-        const {
-            semesterId,
-            branch,
-            section,
-            studentId,
-            attendanceDate,
-            subject,
-            status,
-        } = req.body;
-
-        // 1. Find the active timetable version for the specific class and date
+        const { semesterId, branch, section, studentId, attendanceDate, subject, status } = req.body;
+        
         const timetable = await Timetable.findOne({
             semesterId,
             branch,
@@ -24,77 +16,69 @@ const markAttendance = async (req, res) => {
         }).sort({ effectiveFrom: -1 });
 
         if (!timetable) {
-            return res.status(404).json({
-                success: false,
-                message: "No timetable found for this section on the selected date",
-            });
+            return res.status(404).json({ success: false, message: "No timetable found for this date" });
         }
 
-        // 2. Create the attendance record
         const attendance = await Attendance.create({
-            studentId,
-            attendanceDate,
-            timetableId: timetable._id,
-            subject,
-            status,
-            branch,
-            section
-        });
+    studentId, 
+    attendanceDate, 
+    timetableId: timetable._id, 
+    subject, 
+    status, 
+    branch, 
+    section, 
+    semesterId
+});
+console.log("Attendance Saved:", attendance);
 
-        res.status(201).json({
-            success: true,
-            timetableVersion: timetable.effectiveFrom,
-            data: attendance,
-        });
-
+        res.status(201).json({ success: true, data: attendance });
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: error.message,
-        });
+        res.status(500).json({ success: false, message: error.message });
     }
 };
 
-// Get Attendance Report (for Admin/Faculty)
-const getAttendanceReport = async (req, res) => {
-    try {
-        const { semesterId, branch, section, startDate, endDate } = req.query;
-
-        const report = await Attendance.find({
-            semesterId,
-            branch,
-            section,
-            attendanceDate: {
-                $gte: new Date(startDate),
-                $lte: new Date(endDate)
-            }
-        }).populate("timetableId");
-
-        res.status(200).json({
-            success: true,
-            data: report,
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: error.message,
-        });
-    }
-};
-
-// Get All Attendance
+// 2. Get Attendance History (The Main View)
 const getAttendance = async (req, res) => {
     try {
-        const attendance = await Attendance.find().populate("timetableId");
-        res.status(200).json({
-            success: true,
-            data: attendance,
-        });
+        // Fetch all, sort by date descending (newest first)
+        const attendance = await Attendance.find()
+            .populate({
+                path: 'timetableId',
+                select: 'branch section subject' // Adjust these fields to match your Timetable model
+            })
+            .populate({
+                path: 'semesterId',
+                select: 'name' // Ensure your Semester model has a 'name' field
+            })
+            .sort({ attendanceDate: -1 })
+            .lean(); // .lean() makes the output a plain JS object, which is faster for React
+
+        res.status(200).json({ success: true, data: attendance });
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: error.message,
-        });
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// 3. Get Attendance Report (Filtered View)
+const getAttendanceReport = async (req, res) => {
+    try {
+        const { semesterId, branch, section } = req.query;
+        
+        // Build filter object dynamically
+        const filter = {};
+        if (semesterId) filter.semesterId = semesterId;
+        if (branch) filter.branch = branch;
+        if (section) filter.section = section;
+
+        const report = await Attendance.find(filter)
+            .populate("timetableId")
+            .populate("semesterId")
+            .sort({ attendanceDate: -1 })
+            .lean();
+
+        res.status(200).json({ success: true, data: report });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
     }
 };
 
