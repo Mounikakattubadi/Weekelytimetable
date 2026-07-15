@@ -48,7 +48,42 @@ export default function Timetable() {
     }
   };
 
-  const handleSave = async () => {
+ const handleSave = async () => {
+    // 1. Validation: Ensure all fields are filled
+    if (!form.semesterId || !form.branch || !form.section || !form.effectiveFrom || !form.effectiveTo) {
+      alert("Please fill in all fields.");
+      return;
+    }
+
+    // 2. Validation: Ensure 'Effective To' is not before 'Effective From'
+    const start = new Date(form.effectiveFrom);
+    const end = new Date(form.effectiveTo);
+    
+    if (end < start) {
+      alert("Error: 'Effective To' date cannot be before 'Effective From' date.");
+      return;
+    }
+
+    // 3. Validation: Check for existing overlaps in your saved timetables
+    const isTaken = timetables.some((tt) => {
+      const ttStart = new Date(tt.effectiveFrom);
+      const ttEnd = new Date(tt.effectiveTo);
+      
+      return (
+        tt.semesterId?._id === form.semesterId &&
+        tt.branch === form.branch &&
+        tt.section === form.section &&
+        start <= ttEnd &&
+        end >= ttStart
+      );
+    });
+
+    if (isTaken) {
+      alert("Error: A timetable for this branch/section already exists for these dates.");
+      return;
+    }
+
+    // 4. If all checks pass, proceed to save
     try {
       await api.post("/timetables", form);
       alert("Timetable Saved Successfully");
