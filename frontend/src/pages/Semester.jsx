@@ -16,7 +16,7 @@ export default function Semester() {
     } catch (err) { console.error(err); }
   };
 
- const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
   e.preventDefault();
   
   const start = new Date(form.startDate);
@@ -26,12 +26,19 @@ export default function Semester() {
     return alert("End date must be after the start date.");
   }
 
-  // Check for Overlaps
+  // 1. Check for Duplicate Names (Case-Insensitive)
+  const isDuplicateName = semesters.some(s => 
+    s.name.toLowerCase() === form.name.trim().toLowerCase()
+  );
+
+  if (isDuplicateName) {
+    return alert(`Error: A semester named "${form.name}" already exists.`);
+  }
+
+  // 2. Check for Overlaps
   const isOverlapping = semesters.some(s => {
     const sStart = new Date(s.startDate);
     const sEnd = new Date(s.endDate);
-    
-    // An overlap occurs if: (NewStart < ExistingEnd) AND (NewEnd > ExistingStart)
     return start < sEnd && end > sStart;
   });
 
@@ -41,7 +48,9 @@ export default function Semester() {
 
   setLoading(true);
   try {
-    await api.post("/semesters", form);
+    // Add trim() to clean up accidental whitespace
+    await api.post("/semesters", { ...form, name: form.name.trim() });
+    
     setForm({ name: "", startDate: "", endDate: "" });
     fetchSemesters();
     alert("Semester created successfully!");
